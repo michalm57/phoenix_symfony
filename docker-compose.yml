@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: app_dev
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  backend:
+    build: ./backend
+    container_name: phoenix_api
+    ports:
+      - "4000:4000"
+    depends_on:
+      - db
+    volumes:
+      - ./backend:/app
+    environment:
+      MIX_ENV: dev
+      DB_HOSTNAME: db
+      DB_USERNAME: postgres
+      DB_PASSWORD: password
+      DB_NAME: app_dev
+
+  frontend:
+    build: ./frontend
+    container_name: symfony_app
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./frontend:/app
+    environment:
+      API_URL: http://backend:4000
+
+volumes:
+  pgdata:
