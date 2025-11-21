@@ -83,7 +83,12 @@ docker compose exec backend mix ecto.setup
 
 `ecto.setup` = `ecto.create` + `ecto.migrate`.
 
-### 4. Install Dependencies (Frontend)
+### 4. Create .env file (Frontend)
+```bash
+cp frontend/.env.example frontend/.env
+```
+
+### 5. Install Dependencies (Frontend)
 
 Usually automatic, but if needed:
 
