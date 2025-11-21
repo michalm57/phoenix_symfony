@@ -1,0 +1,13 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <h1>{{ title }}</h1>
+    
+    <div class="card p-4 mt-3">
+        {{ form_start(form) }}
+            {{ form_widget(form) }}
+            <button class="btn btn-success mt-3">Save</button>
+            <a href="{{ path('app_user_index') }}" class="btn btn-link mt-3">Cancel</a>
+        {{ form_end(form) }}
+    </div>
+{% endblock %}
