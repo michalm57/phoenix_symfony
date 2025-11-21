@@ -1,0 +1,81 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Users</h1>
+        <div>
+            <form action="{{ path('app_user_import') }}" method="post" class="d-inline">
+                <button class="btn btn-warning">Generate 100 random</button>
+            </form>
+            <a href="{{ path('app_user_new') }}" class="btn btn-primary">Add new</a>
+        </div>
+    </div>
+
+    <div class="card p-3 mb-4 bg-light">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <input type="text" name="last_name" class="form-control" placeholder="Last name" value="{{ queryParams.last_name|default('') }}">
+            </div>
+            <div class="col-md-2">
+                <select name="gender" class="form-select">
+                    <option value="">Gender (all)</option>
+                    <option value="male" {{ queryParams.gender|default('') == 'male' ? 'selected' : '' }}>Male</option>
+                    <option value="female" {{ queryParams.gender|default('') == 'female' ? 'selected' : '' }}>Female</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <input type="date" name="birthdate_from" class="form-control" value="{{ queryParams.birthdate_from|default('') }}">
+            </div>
+            <div class="col-md-2">
+                <input type="date" name="birthdate_to" class="form-control" value="{{ queryParams.birthdate_to|default('') }}">
+            </div>
+            <div class="col-md-2">
+                 <select name="sort_by" class="form-select">
+                    <option value="">Sort by...</option>
+                    <option value="birthdate" {{ queryParams.sort_by|default('') == 'birthdate' ? 'selected' : '' }}>Birthdate</option>
+                    <option value="last_name" {{ queryParams.sort_by|default('') == 'last_name' ? 'selected' : '' }}>Last name</option>
+                </select>
+            </div>
+             <div class="col-md-1">
+                 <select name="sort_order" class="form-select">
+                    <option value="asc" {{ queryParams.sort_order|default('') == 'asc' ? 'selected' : '' }}>Asc.</option>
+                    <option value="desc" {{ queryParams.sort_order|default('') == 'desc' ? 'selected' : '' }}>Desc.</option>
+                </select>
+            </div>
+            <div class="col-12">
+                <button type="submit" class="btn btn-secondary btn-sm">Filter / Sort</button>
+                <a href="{{ path('app_user_index') }}" class="btn btn-outline-secondary btn-sm">Reset</a>
+            </div>
+        </form>
+    </div>
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Name and surname</th>
+                <th>Gender</th>
+                <th>Birthdate</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for user in users %}
+            <tr>
+                <td>{{ user.first_name }} {{ user.last_name }}</td>
+                <td>{{ user.gender == 'male' ? 'Male' : 'Female' }}</td>
+                <td>{{ user.birthdate }}</td>
+                <td>
+                    <a href="{{ path('app_user_edit', {id: user.id}) }}" class="btn btn-sm btn-info">Edit</a>
+                    <form method="post" action="{{ path('app_user_delete', {id: user.id}) }}" class="d-inline" onsubmit="return confirm('Are you sure?')">
+                        <button class="btn btn-sm btn-danger">Delete</button>
+                    </form>
+                </td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="4" class="text-center">No users found. Click "Generate" to import sample data.</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
