@@ -67,14 +67,12 @@ cd phoenix_symfony
 Run in the project root:
 
 ```bash
-docker compose up --build
+docker compose up --build -d
 ```
 
 Backend may take longer on first run due to dependency compilation.
 
 ### 3. Initialize Database (Backend)
-
-Open a second terminal:
 
 ```bash
 # Create database and run migrations
