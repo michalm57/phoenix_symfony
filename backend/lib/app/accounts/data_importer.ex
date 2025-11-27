@@ -7,21 +7,26 @@ defmodule App.Accounts.DataImporter do
   @female_surnames_url "https://api.dane.gov.pl/1.4/resources/63888/data?page=1&per_page=100&q=&sort=-col2"
 
   def run do
-    task_mn = Task.async(fn -> fetch_data_from_api(@male_names_url) end)
-    task_fn = Task.async(fn -> fetch_data_from_api(@female_names_url) end)
-    task_ms = Task.async(fn -> fetch_data_from_api(@male_surnames_url) end)
-    task_fs = Task.async(fn -> fetch_data_from_api(@female_surnames_url) end)
+    tasks = [
+      Task.async(fn -> fetch_data_from_api(@male_names_url) end),
+      Task.async(fn -> fetch_data_from_api(@female_names_url) end),
+      Task.async(fn -> fetch_data_from_api(@male_surnames_url) end),
+      Task.async(fn -> fetch_data_from_api(@female_surnames_url) end)
+    ]
 
-    male_names = Task.await(task_mn, 30_000)
-    female_names = Task.await(task_fn, 30_000)
-    male_surnames = Task.await(task_ms, 30_000)
-    female_surnames = Task.await(task_fs, 30_000)
-
-    if Enum.empty?(male_names) do
-      {:error, "Failed to retrieve data from API"}
-    else
-      generate_and_save_users(male_names, female_names, male_surnames, female_surnames)
-      {:ok, "100 users were imported from the PESEL register"}
+    try do
+      [male_names, female_names, male_surnames, female_surnames] =
+        Task.await_many(tasks, 30_000)
+      if Enum.empty?(male_names) do
+        {:error, "Failed to retrieve data from male names API or data is empty."}
+      else
+        generate_and_save_users(male_names, female_names, male_surnames, female_surnames)
+        {:ok, "100 users were imported from the PESEL register"}
+      end
+    rescue
+      e ->
+        Task.shutdown_many(tasks, :brutal_kill)
+        {:error, "API communication error or timeout: #{Exception.message(e)}"}
     end
   end
 
