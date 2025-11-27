@@ -3,19 +3,17 @@
 namespace App\Controller;
 
 use App\Form\UserType;
-use App\Repository\UserRepository;
+use App\Repository\UserRepositoryInterface;
 use App\Service\UserImporterService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface;
-use Symfony\Contracts\HttpClient\Exception\ServerExceptionInterface;
 
 class UserController extends AbstractController
 {
     public function __construct(
-        private UserRepository $userRepository,
+        private UserRepositoryInterface $userRepository,
         private UserImporterService $importerService
     ) {}
 
@@ -25,7 +23,7 @@ class UserController extends AbstractController
         $queryParams = $request->query->all();
 
         try {
-            $users = $this->userRepository->getUsers($queryParams);
+        $users = $this->userRepository->getUsers($queryParams);
         } catch (\Exception $e) {
             $this->addFlash('danger', 'API connection error: ' . $e->getMessage());
             $users = [];
@@ -53,9 +51,9 @@ class UserController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             try {
-                $this->userRepository->createUser($form->getData());
+            $this->userRepository->createUser($form->getData());
                 $this->addFlash('success', 'User added.');
-                return $this->redirectToRoute('app_user_index');
+            return $this->redirectToRoute('app_user_index');
             } catch (ClientExceptionInterface $e) {
                 $response = $e->getResponse();
                 $errorMessage = 'Validation error from the Phoenix API.';

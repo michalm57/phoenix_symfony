@@ -8,7 +8,7 @@ use Symfony\Contracts\HttpClient\Exception\ExceptionInterface;
 use Psr\Cache\CacheItemPoolInterface;
 use Psr\Log\LoggerInterface;
 
-class UserRepository
+class UserRepository implements UserRepositoryInterface
 {
     private const CACHE_KEY_LIST = 'users_list_all';
     private const CACHE_KEY_INDEX = 'users_cache_keys_index';
