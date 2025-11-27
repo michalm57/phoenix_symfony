@@ -3,15 +3,21 @@
 namespace App\Controller;
 
 use App\Form\UserType;
-use App\Service\PhoenixApiService;
+use App\Repository\UserRepository;
+use App\Service\UserImporterService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface;
+use Symfony\Contracts\HttpClient\Exception\ServerExceptionInterface;
 
 class UserController extends AbstractController
 {
-    public function __construct(private PhoenixApiService $apiService) {}
+    public function __construct(
+        private UserRepository $userRepository,
+        private UserImporterService $importerService
+    ) {}
 
     #[Route('/', name: 'app_user_index', methods: ['GET'])]
     public function index(Request $request): Response
@@ -19,7 +25,7 @@ class UserController extends AbstractController
         $queryParams = $request->query->all();
 
         try {
-            $users = $this->apiService->getUsers($queryParams);
+            $users = $this->userRepository->getUsers($queryParams);
         } catch (\Exception $e) {
             $this->addFlash('danger', 'API connection error: ' . $e->getMessage());
             $users = [];
@@ -34,7 +40,7 @@ class UserController extends AbstractController
     #[Route('/import', name: 'app_user_import', methods: ['POST'])]
     public function import(): Response
     {
-        $this->apiService->importUsers();
+        $this->importerService->importUsers();
         $this->addFlash('success', 'Test data has been imported!');
         return $this->redirectToRoute('app_user_index');
     }
@@ -47,11 +53,19 @@ class UserController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             try {
-                $this->apiService->createUser($form->getData());
+                $this->userRepository->createUser($form->getData());
                 $this->addFlash('success', 'User added.');
                 return $this->redirectToRoute('app_user_index');
             } catch (ClientExceptionInterface $e) {
-                $errorMessage = $e->getResponse()->toArray(false)['error'] ?? 'Validation error from the Phoenix API.';
+                $response = $e->getResponse();
+                $errorMessage = 'Validation error from the Phoenix API.';
+                if ($response) {
+                    try {
+                         $errorMessage = $response->toArray(false)['error'] ?? 'Validation error from the Phoenix API.';
+                    } catch (\Exception $jsonE) {
+                        error_log('Error parsing JSON from Phoenix API: ' . $jsonE->getMessage());
+                    }
+                }
                 $this->addFlash('error', 'Creation failed (4xx): ' . $errorMessage);
             } catch (ServerExceptionInterface $e) {
                 $this->addFlash('error', 'Creation failed (5xx): Phoenix API server error.');
@@ -69,13 +83,13 @@ class UserController extends AbstractController
     #[Route('/{id}/edit', name: 'app_user_edit', methods: ['GET', 'POST'])]
     public function edit(Request $request, int $id): Response
     {
-        $user = $this->apiService->getUser($id);
+        $user = $this->userRepository->getUser($id);
 
         $form = $this->createForm(UserType::class, $user);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $this->apiService->updateUser($id, $form->getData());
+            $this->userRepository->updateUser($id, $form->getData());
             $this->addFlash('success', 'Data updated.');
             return $this->redirectToRoute('app_user_index');
         }
@@ -89,7 +103,7 @@ class UserController extends AbstractController
     #[Route('/{id}', name: 'app_user_delete', methods: ['POST'])]
     public function delete(int $id): Response
     {
-        $this->apiService->deleteUser($id);
+        $this->userRepository->deleteUser($id);
         $this->addFlash('success', 'User deleted.');
         return $this->redirectToRoute('app_user_index');
     }
