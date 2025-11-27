@@ -73,7 +73,9 @@ defmodule App.Accounts do
 
   # --- Sorting ---
 
-  defp sort_users(query, nil, _), do: query
+  defp sort_users(query, nil, _order) do
+    order_by(query, [u], [desc: u.updated_at])
+  end
   defp sort_users(query, column, order) do
     case Map.get(@sortable_fields, column) do
       nil ->
