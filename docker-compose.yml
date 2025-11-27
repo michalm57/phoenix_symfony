@@ -12,6 +12,12 @@ services:
     ports:
       - "5432:5432"
 
+  redis:
+    image: redis:6-alpine
+    container_name: redis_cache
+    ports:
+      - "6379:6379"
+
   backend:
     build: ./backend
     container_name: phoenix_api
@@ -35,8 +41,11 @@ services:
       - "8000:8000"
     volumes:
       - ./frontend:/app
+    depends_on:
+      - redis
     environment:
       API_URL: http://backend:4000
+      REDIS_DSN: 'redis://redis:6379' 
 
 volumes:
   pgdata:
