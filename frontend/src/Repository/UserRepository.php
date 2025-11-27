@@ -30,7 +30,7 @@ class UserRepository
         $statusCode = $response->getStatusCode();
 
         if ($statusCode >= 400) {
-             return [];
+            return [];
         }
 
         try {
@@ -45,46 +45,30 @@ class UserRepository
     public function getUsers(array $queryParams = []): array
     {
         $cacheKey = self::CACHE_KEY_LIST . '_' . md5(serialize($queryParams));
-        
         $cacheItem = $this->cache->getItem($cacheKey);
-
-        if ($cacheItem->isHit()) {
-            return $cacheItem->get();
-        }
 
         try {
             $response = $this->client->request('GET', $this->apiUrl . '/users', [
-                'query' => $queryParams
+                'query' => $queryParams,
+                'timeout' => 0.3,
+                'max_duration' => 0.5
             ]);
+
             $users = $this->getResponseData($response);
 
-            if (!empty($users)) {
-                $cacheItem->set($users);
-                $cacheItem->expiresAfter(self::CACHE_TTL);
-                $this->cache->save($cacheItem);
-
-                $indexItem = $this->cache->getItem(self::CACHE_KEY_INDEX);
-                $keys = $indexItem->isHit() ? (array)$indexItem->get() : [];
-                $keys[] = $cacheKey;
-                $keys = array_values(array_unique($keys));
-                $indexItem->set($keys);
-                $indexItem->expiresAfter(self::CACHE_TTL * 24);
-                $this->cache->save($indexItem);
-            }
+            $cacheItem->set($users);
+            $cacheItem->expiresAfter(self::CACHE_TTL);
+            $this->cache->save($cacheItem);
 
             return $users;
+        } catch (\Throwable $e) {
+            $this->logger->warning("API timeout/failure - loading from cache: " . $e->getMessage());
 
-        } catch (ExceptionInterface $e) {
-            $this->logger->error("Phoenix API error: " . $e->getMessage() . ". Trying to retrieve from cache.");
-
-            $fallbackCacheKey = self::CACHE_KEY_LIST . '_' . md5(serialize([]));
-            $fallbackCacheItem = $this->cache->getItem($fallbackCacheKey);
-
-            if ($fallbackCacheItem->isHit()) {
-                return $fallbackCacheItem->get();
+            if ($cacheItem->isHit()) {
+                return $cacheItem->get();
             }
 
-            throw $e;
+            return [];
         }
     }
 
