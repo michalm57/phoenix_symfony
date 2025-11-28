@@ -6,10 +6,12 @@ defmodule AppWeb.Router do
   end
 
 scope "/api", AppWeb do
-    pipe_through :api
+  pipe_through :api
 
-    resources "/users", UserController
-    post "/import", UserController, :import_data # <-- Dodajemy to
+  get "/users/age-distribution", UserController, :age_distribution
+
+  resources "/users", UserController
+  post "/import", UserController, :import_data
 end
 
   # Enable LiveDashboard in development

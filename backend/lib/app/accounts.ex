@@ -31,6 +31,36 @@ defmodule App.Accounts do
     |> sort_users(cleaned_params["sort_by"], cleaned_params["sort_order"])
     |> Repo.all()
   end
+  
+ def get_age_distribution do
+  ranges = %{
+    "0-18"  => 0..18,
+    "19-27" => 19..27,
+    "28-40" => 28..40,
+    "41+"   => 41..200
+  }
+
+  users = Repo.all(User)
+
+  today = Date.utc_today()
+
+  initial = Map.new(ranges, fn {label, _} -> {label, 0} end)
+
+  Enum.reduce(users, initial, fn user, acc ->
+    age = Date.diff(today, user.birthdate) |> div(365)
+
+    label =
+      Enum.find_value(ranges, fn {label, range} ->
+        if age in range, do: label, else: false
+      end)
+
+    if label do
+      Map.update!(acc, label, &(&1 + 1))
+    else
+      acc
+    end
+  end)
+ end
 
   # --- Filters ---
 

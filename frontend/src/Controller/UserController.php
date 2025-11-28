@@ -9,6 +9,8 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface;
+use Symfony\Contracts\HttpClient\Exception\ServerExceptionInterface;
 
 class UserController extends AbstractController
 {
@@ -23,15 +25,24 @@ class UserController extends AbstractController
         $queryParams = $request->query->all();
 
         try {
-        $users = $this->userRepository->getUsers($queryParams);
+            $users = $this->userRepository->getUsers($queryParams);
+            $ageDistribution = $this->userRepository->getAgeDistribution();
+
         } catch (\Exception $e) {
             $this->addFlash('danger', 'API connection error: ' . $e->getMessage());
             $users = [];
+            $ageDistribution = [
+                "0-18"  => 0,
+                "19-27" => 0,
+                "28-40" => 0,
+                "41+"   => 0,
+            ];
         }
 
         return $this->render('user/index.html.twig', [
             'users' => $users,
-            'queryParams' => $queryParams
+            'queryParams' => $queryParams,
+            'ageDistribution' => $ageDistribution,
         ]);
     }
 
@@ -51,15 +62,15 @@ class UserController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             try {
-            $this->userRepository->createUser($form->getData());
+                $this->userRepository->createUser($form->getData());
                 $this->addFlash('success', 'User added.');
-            return $this->redirectToRoute('app_user_index');
+                return $this->redirectToRoute('app_user_index');
             } catch (ClientExceptionInterface $e) {
                 $response = $e->getResponse();
                 $errorMessage = 'Validation error from the Phoenix API.';
                 if ($response) {
                     try {
-                         $errorMessage = $response->toArray(false)['error'] ?? 'Validation error from the Phoenix API.';
+                        $errorMessage = $response->toArray(false)['error'] ?? 'Validation error from the Phoenix API.';
                     } catch (\Exception $jsonE) {
                         error_log('Error parsing JSON from Phoenix API: ' . $jsonE->getMessage());
                     }

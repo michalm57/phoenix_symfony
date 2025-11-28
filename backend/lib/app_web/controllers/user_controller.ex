@@ -8,6 +8,11 @@ defmodule AppWeb.UserController do
     users = Accounts.list_users(params)
     render(conn, :index, users: users)
   end
+  
+  def age_distribution(conn, _params) do
+    distribution = Accounts.get_age_distribution()
+    json(conn, distribution)
+  end
 
   def show(conn, %{"id" => id}) do
     user = Accounts.get_user!(id)

@@ -9,4 +9,5 @@ interface UserRepositoryInterface
     public function createUser(array $data): void;
     public function updateUser(int $id, array $data): void;
     public function deleteUser(int $id): void;
+    public function getAgeDistribution(): array;
 }

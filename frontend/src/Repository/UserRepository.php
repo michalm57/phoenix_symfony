@@ -162,4 +162,47 @@ class UserRepository implements UserRepositoryInterface
             throw $e;
         }
     }
+
+    public function getAgeDistribution(): array
+    {
+        $cacheKey = 'users_age_distribution';
+        $cacheItem = $this->cache->getItem($cacheKey);
+
+        if ($cacheItem->isHit()) {
+            return $cacheItem->get();
+        }
+
+        try {
+            $response = $this->client->request(
+                'GET',
+                $this->apiUrl . '/users/age-distribution',
+                [
+                    'timeout' => 0.3,
+                    'max_duration' => 0.5
+                ]
+            );
+
+            $data = $response->toArray();
+
+            $cacheItem->set($data);
+            $cacheItem->expiresAfter(self::CACHE_TTL);
+            $this->cache->save($cacheItem);
+
+            return $data;
+        } catch (\Throwable $e) {
+
+            $this->logger->warning("Failed to fetch age distribution: " . $e->getMessage());
+
+            if ($cacheItem->isHit()) {
+                return $cacheItem->get();
+            }
+
+            return [
+                "0-18"  => 0,
+                "19-27" => 0,
+                "28-40" => 0,
+                "41+"   => 0,
+            ];
+        }
+    }
 }

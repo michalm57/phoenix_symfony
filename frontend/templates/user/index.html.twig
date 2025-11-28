@@ -49,6 +49,15 @@
         </form>
     </div>
 
+    <div class="mb-4">
+        <h5>Users by age range:</h5>
+        <ul>
+        {% for range, count in ageDistribution %}
+            <li>{{ range }}: {{ count }}</li>
+        {% endfor %}
+        </ul>
+    </div>
+
     <table class="table table-striped">
         <thead>
             <tr>
